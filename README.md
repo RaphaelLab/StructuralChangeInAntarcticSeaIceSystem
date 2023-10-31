@@ -1,4 +1,4 @@
-<img src="Figures/A21CSCASIS_hl.png" align="left" width="250" height="250" alt="A21CSCASIS"/>
+<img src="Figures/Fig2color-rel-recon.png" align="left" width="250" height="450" alt="A21CSCASIS"/>
 
 #Overview 
 This repository contains the `R` code and data to reproduce analyses in the paper:
