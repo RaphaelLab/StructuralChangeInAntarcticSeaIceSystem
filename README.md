@@ -1,6 +1,6 @@
-<img src="Figures/Fig2color-rel-recon.png" align="left" width="250" height="450" alt="A21CSCASIS"/>
+<img src="Figures/Fig2color-abs-legend.png" align="left" width="250" height="450" alt="A21CSCASIS"/>
 
-#Overview 
+# Overview 
 This repository contains the `R` code and data to reproduce analyses in the paper:
 
 "A Twenty-First Century Structural Change in Antarctica’s Sea ice System"
