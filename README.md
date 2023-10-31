@@ -1,28 +1,30 @@
-<img src="Figures/Fig2color-abs-legend.png" align="left" width="450" height="650" alt="A21CSCASIS"/>
+<img src="Figures/Fig2color-abs-legend.png" align="left" width="150" height="230" alt="A21CSCASIS"/>
 
 # Overview 
-This repository contains the `R` code and data to reproduce analyses in the paper:
+This repository contains the `R` source code and data to reproduce analyses in the paper:
 
 "A Twenty-First Century Structural Change in Antarctica’s Sea ice System"
 
 by Marilyn N. Raphael, Thomas J. Maierhofer, Ryan L. Fogt, William R. Hobbs, and Mark S. Handcock
 
-# Requirements
-The code is all in the `R` language for statistical computation. To run it you will need `R` installed on your
-local machine as well as some standard `R` packages from `CRAN`. For an introduction to `R`, see [here](https://www.r-project.org/). 
+# System Requirements
+The code is all in the `R` language for statistical computation. It will run on any system that supports `R` (e.g., Windows, Macintosh, Linux).
+Version 4.0 or higher of `R` is required to be installed on your
+local machine, as well as some standard `R` packages from `CRAN`. For an introduction to `R`, see [here](https://www.r-project.org/). 
 
 # Installation
 To explore the code, the easy way to clone the repository on your local machine and run the `R` code locally on your machine.
 So first, [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository).
+The install time should be a few seconds. 
 
 # What is in the repository?
 The repository is comprised of four components: At the top level are  separate files of `R` code.
 
-* **Data** This folder contains the two data files.
-   * `nsidcV4.RData`: A version of the recorded sea ice extents from the National Snow and Ice Daat Center (NSIDC).
-   * `reconstructions_regional.RDS`: An ensemble of reconstructions of the monthly sea ice extent. There are 2500 in number. The reconstruction file is large (110Mb).
+* **Data** This folder contains the one data file:
+   * `nsidcV4.RData`: A version of the recorded sea ice extents from the National Snow and Ice Data Center (NSIDC).
+   * `reconstructions_regional.RDS`: An ensemble of reconstructions of the monthly sea ice extent. There are 2500 in number. The reconstruction file is large (110Mb) so is read in from the cloud using a URL in the `R` files.
 * **Figures**: When the code is run the figures are saved in this folder as PDF and PNG files.
-* **ExampleOutput**: This folder contains example outputs resulting from code runs. They are here to validate your runs.
+* **ExpectedOutput**: This folder contains example outputs resulting from code runs. They are here to validate your runs.
 * **R**:  At the top level are separate files of `R` code.
    * `Nature-2023-07-12845A-Plots.R`: Running this `R` code will reconstruct the plots in the paper and save them to the folder `Figures`. This
    * takes about 13 seconds to run.
@@ -35,3 +37,5 @@ See the following papers for more information and examples:
 
 * Maierhofer, Thomas J (2023) [Statistical Reconstruction of 20th Century Antarctic Sea Ice](https://escholarship.org/uc/item/33m3c3mn)
   Dissertation, University of California at Los Angeles. ProQuest ID: Maierhofer_ucla_0031D_21798. Merritt ID: ark:/13030/m5z68gkk.
+* R Core Team (2021). [R: A language and environment for statistical computing](https://www.R-project.org/). R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+* R Core Team (2021). [The Comprehensive R Archive Network (CRAN)](https://www.R-project.org/). R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
