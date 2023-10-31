@@ -1,4 +1,4 @@
-<img src="Figures/Fig2color-abs-legend.png" align="left" width="250" height="450" alt="A21CSCASIS"/>
+<img src="Figures/Fig2color-abs-legend.png" align="left" width="300" height="450" alt="A21CSCASIS"/>
 
 # Overview 
 This repository contains the `R` code and data to reproduce analyses in the paper:
