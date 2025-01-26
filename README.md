@@ -22,14 +22,20 @@ The repository is comprised of four components: At the top level are  separate f
 
 * **Data** This folder contains the one data file:
    * `nsidcV4.RData`: A version of the recorded sea ice extents from the National Snow and Ice Data Center (NSIDC).
-   * `reconstructions_regional.RDS`: An ensemble of reconstructions of the monthly sea ice extent. There are 2500 in number. The reconstruction file is large (110Mb) so is read in from the cloud using a URL in the `R` files.
+   * `reconstructions_sectors.RDS`: An ensemble of reconstructions of the monthly sea ice extent for each of the five sectors. There are 2500 in number. The reconstruction file is large (110Mb) so is read in from the cloud using a URL in the `R` files.
+   * `reconstructions_total_to_2023.RDS`: An ensemble of reconstructions of the monthly sea ice extent for the total Antarctica. The reconstruction file is read in from the cloud using a URL in the `R` files.
+   * `persistence.RDS`: Summary persistence measures for each member of the ensemble of reconstructions of the monthly sea ice extent for the total Antarctica. These are computed by `Nature-COMMSENV-23-1836A-dynamic-ARIMA.R` and are provided here to speed the production of the plots as are separately of interest.
+   * `persistence-[X].RDS`: Summary persistence measures for each member of the ensemble of reconstructions of the monthly sea ice extent for the Xth sector of Antarctica. Here X is one of 1, 2, 3, 4, 5, corresponding to "King Haakon VII", "Ross-Admundsen", "East Antarctica", "Weddell", and "Bellingshausen Amundsen", respectively. These are computed by `Nature-COMMSENV-23-1836A-dynamic-ARIMA.R` and are provided here to speed the production of the plots as are separately of interest.
+    * `pos_pred_fits.RData`: Posterior predictive distributions for the satellite oberved period. These are provided here to speed the production of the plots as are separately of interest.
+    * `pos_pred_fits_brief.RData`: Summary statistics of the posterior predictive distributions for the satellite oberved period. These are provided here to speed the production of the plots as are separately of interest.
 * **Figures**: When the code is run the figures are saved in this folder as PDF and PNG files.
 * **ExpectedOutput**: This folder contains example outputs resulting from code runs. They are here to validate your runs.
 * **R**:  At the top level are separate files of `R` code.
    * `Nature-COMMSENV-23-1836A-Plots.R`: Running this `R` code will reconstruct the plots in the paper and save them to the folder `Figures`. This
    * takes about 13 seconds to run.
    * `Nature-COMMSENV-23-1836A-Events.R`: Running this `R` code will recompute the probabilities of the events analyzed in Section 3 of the paper and also create Supplementary Figure 3. This takes about 250 seconds to run.
-   * `Nature-COMMSENV-23-1836A-dynamic-ARIMA.R`: Running this `R` code will fit the dynamic auto-regressive integrated moving average model (ARIMA) analyzed in Section 4 of the paper. It will also produce various Markov Chain Monte Carlo (MCMC) diagnostics and save plots of them to the folder `Figures`. This takes about 64 seconds to run. There is a setting in the file that takes about 2 hours to run and produces the results in the paper. The amount of computing was excessive, but the computational cost is minor.
+   * `Nature-COMMSENV-23-1836A-dynamic-ARIMA.R`: Running this `R` code will fit the dynamic auto-regressive integrated moving average model (ARIMA) analyzed in Section 4 of the paper. It will also produce various Markov Chain Monte Carlo (MCMC) diagnostics, save the cores results and save plots of them to the folder `Figures`. The example takes about 250 seconds to run, but the one run in the paper uses all 2500 ensemble members and takes a day to run. There is a setting in the file that takes about a day to run and produces the results in the paper. The amount of computing is excessive, but the overall computational cost is minor.
+   * `Nature-COMMSENV-23-1836A-dynamic-ARIMA-analysis.R`: Running this `R` code will summarize the results of the dynamic auto-regressive integrated moving average model (ARIMA) analyzed in Section 4 of the paper (and the file `Nature-COMMSENV-23-1836A-dynamic-ARIMA-analysis.R`). It will also produce various diagnostics and save plots of them to the folder `Figures`.
 
 See the following papers for more information and examples:
 
