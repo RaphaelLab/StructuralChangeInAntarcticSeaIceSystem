@@ -1,0 +1,786 @@
+> # This is the code for recreating the dynamic ARMA fits
+> # in Nature manuscript 2023-07-12845A
+> #
+> # "A Twenty-First Century Structural Change in Antarctica’s Sea ice System"
+> #  by Marilyn N. Raphael, Thomas J. Maierhofer, Ryan L. Fogt, William R. Hobbs, and Mark S. Handcock
+> #
+> # These standard R packages need to be present (and can be installed via 'install.packages("scales")', etc.
+> library(scales)
+> library(ggplot2)
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library(tidyverse)
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ lubridate 1.9.4     ✔ tibble    3.2.1
+✔ purrr     1.0.2     ✔ tidyr     1.3.1
+✔ readr     2.1.5     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ readr::col_factor() masks scales::col_factor()
+✖ purrr::discard()    masks scales::discard()
+✖ dplyr::filter()     masks stats::filter()
+✖ dplyr::lag()        masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+> library(grid)
+> library(gridExtra, warn.conflicts = FALSE)
+> 
+> library(rjags)
+Loading required package: coda
+Linked to JAGS 4.3.1
+Loaded modules: basemod,bugs
+> library(runjags, warn.conflicts = FALSE)
+> 
+> library(bayesplot)
+This is bayesplot version 1.11.1
+- Online documentation and vignettes at mc-stan.org/bayesplot
+- bayesplot theme set to bayesplot::theme_default()
+   * Does _not_ affect other ggplot2 plots
+   * See ?bayesplot_theme_set for details on theme setting
+> library(loo)
+This is loo version 2.8.0
+- Online documentation and vignettes at mc-stan.org/loo
+- As of v2.0.0 loo defaults to 1 core but we recommend using as many as possible. Use the 'cores' argument or set options(mc.cores = NUM_CORES) for an entire session. 
+> #
+> #
+> # First we read in the NSIDC sea ice extent data 
+> # and the reconstructions of Maierhofer (2023) [See cite details in the manuscript]
+> load(file="../Data/nsidcV4.RData")
+> tempFile_location<- tempfile()
+> download.file(url="https://ucla.box.com/shared/static/ip0wlp72fslp40o7vudnwfvfwcbmsmg2",
++               destfile=tempFile_location, method="wget", mode="rb")
+--2025-01-25 22:37:29--  https://ucla.box.com/shared/static/ip0wlp72fslp40o7vudnwfvfwcbmsmg2
+Resolving ucla.box.com (ucla.box.com)... 74.112.186.157
+Connecting to ucla.box.com (ucla.box.com)|74.112.186.157|:443... connected.
+HTTP request sent, awaiting response... 301 Moved Permanently
+Location: /public/static/ip0wlp72fslp40o7vudnwfvfwcbmsmg2 [following]
+--2025-01-25 22:37:30--  https://ucla.box.com/public/static/ip0wlp72fslp40o7vudnwfvfwcbmsmg2
+Reusing existing connection to ucla.box.com:443.
+HTTP request sent, awaiting response... 301 Moved Permanently
+Location: https://ucla.app.box.com/public/static/ip0wlp72fslp40o7vudnwfvfwcbmsmg2 [following]
+--2025-01-25 22:37:30--  https://ucla.app.box.com/public/static/ip0wlp72fslp40o7vudnwfvfwcbmsmg2
+Resolving ucla.app.box.com (ucla.app.box.com)... 74.112.186.157
+Connecting to ucla.app.box.com (ucla.app.box.com)|74.112.186.157|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://public.boxcloud.com/d/1/b1!as2sa4RVSBXYkTwvbLMSYHOS2D9kyhdScbyBjtsktTRGfZEr_JYlfm_A96Qu8DAR5jyMakv1aeQGtZblJhVUATNZKA_crxDA5yrhJXQm3Mui3uJmL8LtsXHXiUkSjFkBifBUskkDgEnLQIVUT2XG1EiwJ_D20BFTLCsQTADq8ehno9oofZhKpFfY9UtCdt-rLgsIgaDi1Dc8lVNa0kf7BawVfevxa4yqU-RdMb5bjs1_8OCB_5wNDFV2Bosy6NYM5YQhDuHdCRAJ8G227Gw6SFxXldM8eLXtiXuwIc2zKrJQCtzAiXhLEs-1W_TZKE0is3ZAwh3lZei_Ew2fr8v67D_KALK8M78aDN7vDpMmpW1RCCx0GsfUZm7CiOC_b3QVs2hbWochOToWwwUcAkHzYTMhTdTpjnDDv3fwdv-eQG-Z2kLWqj5j_cwOU0JUdDtUHM_kRpwZ5neba7udBzmowhoWq6DXDlPPaB7IXHuOz7cZvA2JczWe1jvjm6cYSDY0clWaQaewX956YAXVGVIyHptU6X3tls6K-pimmMLPclgutNoKhoAG1hyxwrbq0P3aic8CVbogguXdcMTlyBF3uTaS9Kzu6TLYrau4d_WI7DXWLog4DTZs9jEmXLz-M_YHhKJAA0BECM6YitBT823NY0bdI22phXXkvHly2nUd5Jd8okGTV5XhBU2JGpsa0c4eE0VWOcG440cE0eA1aXCSDF8Y88gNY_XhEBKr9xW-7BhgAt1ecbekf0WF6ielJWhsFinRcx6h9scu1ZiwCnRq1oQTOQi_lizn7ZjDgIioZpMniBoFALXiUFmWA20lUtzrCioqH1c4Fktp2-sm3h343rUVWCbxI0d4nhK7H_BTFVoJVNotNrbP7OFfdyRTP8yuhS8vuh3KFnZP-fCQ37fR-nmcv0sOepDoDyquh-HzNczJ4VPFm33-cXqA6FephcFpMUBt6cUKyG9f4e5Z6h7EYLe9oDFpxHRMZHcUhS6SN4soLIa3q5HocSXtDWVxP_IbyuO25GOJzuTnfCbkk9do-BfDkHnh-XO0IG8fK_OvRNsAdgDTyrB4CPR4vaF8xVUVIF0rPs222lojeqqG2CSjWBWE4X9YB39Qfsrqi-5XLshFEBL40XjCpfykaRHII1hTNSmBrt-lz8jSPQnVN8WtCa_Ll1zgE8VXADysmofjmxmEAym_P4vfjftcinXvOouB6NfLkfpTjTSgMWw4jlCEqkE7v2478RkozJNgSHJquRe63UwSRX4ruitvGIGHmMs4Fr2TyLa-5KS9h6seq4jiq5861k42dJWOrYLAfCf97hjgjttY_X108xqcBkrYiiUiMbmXH_GBeVNgQAvl06KSzAV5EkeHzYAGXRZBF2Z57FRtQnNAIuRm7S9soWHudEAoejru0OXohLxRTR-ZzBqriRtr7RuqokL7-byBAGwnDuyXP4tXdC6KZVNxejVLHb-z5oLR-rBhl70vPxvRMMjKd3W3-SddTtjCQMghUa7SvqWGbC0pgyXFh6eGwZKeKtEXE-49JgeTMC5N_w../download [following]
+--2025-01-25 22:37:31--  https://public.boxcloud.com/d/1/b1!as2sa4RVSBXYkTwvbLMSYHOS2D9kyhdScbyBjtsktTRGfZEr_JYlfm_A96Qu8DAR5jyMakv1aeQGtZblJhVUATNZKA_crxDA5yrhJXQm3Mui3uJmL8LtsXHXiUkSjFkBifBUskkDgEnLQIVUT2XG1EiwJ_D20BFTLCsQTADq8ehno9oofZhKpFfY9UtCdt-rLgsIgaDi1Dc8lVNa0kf7BawVfevxa4yqU-RdMb5bjs1_8OCB_5wNDFV2Bosy6NYM5YQhDuHdCRAJ8G227Gw6SFxXldM8eLXtiXuwIc2zKrJQCtzAiXhLEs-1W_TZKE0is3ZAwh3lZei_Ew2fr8v67D_KALK8M78aDN7vDpMmpW1RCCx0GsfUZm7CiOC_b3QVs2hbWochOToWwwUcAkHzYTMhTdTpjnDDv3fwdv-eQG-Z2kLWqj5j_cwOU0JUdDtUHM_kRpwZ5neba7udBzmowhoWq6DXDlPPaB7IXHuOz7cZvA2JczWe1jvjm6cYSDY0clWaQaewX956YAXVGVIyHptU6X3tls6K-pimmMLPclgutNoKhoAG1hyxwrbq0P3aic8CVbogguXdcMTlyBF3uTaS9Kzu6TLYrau4d_WI7DXWLog4DTZs9jEmXLz-M_YHhKJAA0BECM6YitBT823NY0bdI22phXXkvHly2nUd5Jd8okGTV5XhBU2JGpsa0c4eE0VWOcG440cE0eA1aXCSDF8Y88gNY_XhEBKr9xW-7BhgAt1ecbekf0WF6ielJWhsFinRcx6h9scu1ZiwCnRq1oQTOQi_lizn7ZjDgIioZpMniBoFALXiUFmWA20lUtzrCioqH1c4Fktp2-sm3h343rUVWCbxI0d4nhK7H_BTFVoJVNotNrbP7OFfdyRTP8yuhS8vuh3KFnZP-fCQ37fR-nmcv0sOepDoDyquh-HzNczJ4VPFm33-cXqA6FephcFpMUBt6cUKyG9f4e5Z6h7EYLe9oDFpxHRMZHcUhS6SN4soLIa3q5HocSXtDWVxP_IbyuO25GOJzuTnfCbkk9do-BfDkHnh-XO0IG8fK_OvRNsAdgDTyrB4CPR4vaF8xVUVIF0rPs222lojeqqG2CSjWBWE4X9YB39Qfsrqi-5XLshFEBL40XjCpfykaRHII1hTNSmBrt-lz8jSPQnVN8WtCa_Ll1zgE8VXADysmofjmxmEAym_P4vfjftcinXvOouB6NfLkfpTjTSgMWw4jlCEqkE7v2478RkozJNgSHJquRe63UwSRX4ruitvGIGHmMs4Fr2TyLa-5KS9h6seq4jiq5861k42dJWOrYLAfCf97hjgjttY_X108xqcBkrYiiUiMbmXH_GBeVNgQAvl06KSzAV5EkeHzYAGXRZBF2Z57FRtQnNAIuRm7S9soWHudEAoejru0OXohLxRTR-ZzBqriRtr7RuqokL7-byBAGwnDuyXP4tXdC6KZVNxejVLHb-z5oLR-rBhl70vPxvRMMjKd3W3-SddTtjCQMghUa7SvqWGbC0pgyXFh6eGwZKeKtEXE-49JgeTMC5N_w../download
+Resolving public.boxcloud.com (public.boxcloud.com)... 74.112.186.165
+Connecting to public.boxcloud.com (public.boxcloud.com)|74.112.186.165|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 14748457 (14M) [application/octet-stream]
+Saving to: ‘/Users/handcock/tmp/Rtmpfwstln/file163ae3e2d8374’
+
+     0K .......... .......... .......... .......... ..........  0%  583K 25s
+    50K .......... .......... .......... .......... ..........  0%  949K 20s
+   100K .......... .......... .......... .......... ..........  1% 1.84M 16s
+   150K .......... .......... .......... .......... ..........  1% 1.93M 14s
+   200K .......... .......... .......... .......... ..........  1% 2.49M 12s
+   250K .......... .......... .......... .......... ..........  2% 3.97M 10s
+   300K .......... .......... .......... .......... ..........  2% 4.45M 9s
+   350K .......... .......... .......... .......... ..........  2% 3.30M 9s
+   400K .......... .......... .......... .......... ..........  3% 5.25M 8s
+   450K .......... .......... .......... .......... ..........  3% 6.15M 7s
+   500K .......... .......... .......... .......... ..........  3% 6.26M 7s
+   550K .......... .......... .......... .......... ..........  4% 8.19M 6s
+   600K .......... .......... .......... .......... ..........  4% 6.63M 6s
+   650K .......... .......... .......... .......... ..........  4% 8.92M 6s
+   700K .......... .......... .......... .......... ..........  5% 5.20M 5s
+   750K .......... .......... .......... .......... ..........  5% 10.6M 5s
+   800K .......... .......... .......... .......... ..........  5% 10.0M 5s
+   850K .......... .......... .......... .......... ..........  6% 11.5M 5s
+   900K .......... .......... .......... .......... ..........  6% 12.6M 5s
+   950K .......... .......... .......... .......... ..........  6% 12.7M 4s
+  1000K .......... .......... .......... .......... ..........  7% 13.6M 4s
+  1050K .......... .......... .......... .......... ..........  7% 8.69M 4s
+  1100K .......... .......... .......... .......... ..........  7% 12.7M 4s
+  1150K .......... .......... .......... .......... ..........  8% 11.5M 4s
+  1200K .......... .......... .......... .......... ..........  8% 14.5M 4s
+  1250K .......... .......... .......... .......... ..........  9% 20.6M 3s
+  1300K .......... .......... .......... .......... ..........  9% 13.0M 3s
+  1350K .......... .......... .......... .......... ..........  9% 7.98M 3s
+  1400K .......... .......... .......... .......... .......... 10% 24.3M 3s
+  1450K .......... .......... .......... .......... .......... 10% 20.7M 3s
+  1500K .......... .......... .......... .......... .......... 10% 14.1M 3s
+  1550K .......... .......... .......... .......... .......... 11% 33.9M 3s
+  1600K .......... .......... .......... .......... .......... 11% 20.8M 3s
+  1650K .......... .......... .......... .......... .......... 11% 9.19M 3s
+  1700K .......... .......... .......... .......... .......... 12% 8.55M 3s
+  1750K .......... .......... .......... .......... .......... 12% 11.3M 3s
+  1800K .......... .......... .......... .......... .......... 12% 8.24M 3s
+  1850K .......... .......... .......... .......... .......... 13% 8.40M 3s
+  1900K .......... .......... .......... .......... .......... 13% 8.33M 3s
+  1950K .......... .......... .......... .......... .......... 13% 14.4M 3s
+  2000K .......... .......... .......... .......... .......... 14% 8.90M 2s
+  2050K .......... .......... .......... .......... .......... 14% 8.91M 2s
+  2100K .......... .......... .......... .......... .......... 14% 10.8M 2s
+  2150K .......... .......... .......... .......... .......... 15% 10.4M 2s
+  2200K .......... .......... .......... .......... .......... 15% 3.09M 2s
+  2250K .......... .......... .......... .......... .......... 15% 18.1M 2s
+  2300K .......... .......... .......... .......... .......... 16% 8.52M 2s
+  2350K .......... .......... .......... .......... .......... 16% 9.78M 2s
+  2400K .......... .......... .......... .......... .......... 17% 11.0M 2s
+  2450K .......... .......... .......... .......... .......... 17% 12.9M 2s
+  2500K .......... .......... .......... .......... .......... 17% 14.2M 2s
+  2550K .......... .......... .......... .......... .......... 18% 12.4M 2s
+  2600K .......... .......... .......... .......... .......... 18% 14.1M 2s
+  2650K .......... .......... .......... .......... .......... 18% 10.4M 2s
+  2700K .......... .......... .......... .......... .......... 19% 12.6M 2s
+  2750K .......... .......... .......... .......... .......... 19% 14.4M 2s
+  2800K .......... .......... .......... .......... .......... 19% 17.3M 2s
+  2850K .......... .......... .......... .......... .......... 20% 13.2M 2s
+  2900K .......... .......... .......... .......... .......... 20% 16.2M 2s
+  2950K .......... .......... .......... .......... .......... 20% 16.8M 2s
+  3000K .......... .......... .......... .......... .......... 21% 13.7M 2s
+  3050K .......... .......... .......... .......... .......... 21% 12.7M 2s
+  3100K .......... .......... .......... .......... .......... 21% 14.2M 2s
+  3150K .......... .......... .......... .......... .......... 22% 17.1M 2s
+  3200K .......... .......... .......... .......... .......... 22% 16.1M 2s
+  3250K .......... .......... .......... .......... .......... 22% 17.1M 2s
+  3300K .......... .......... .......... .......... .......... 23% 19.6M 2s
+  3350K .......... .......... .......... .......... .......... 23% 16.9M 2s
+  3400K .......... .......... .......... .......... .......... 23% 16.9M 2s
+  3450K .......... .......... .......... .......... .......... 24% 12.6M 2s
+  3500K .......... .......... .......... .......... .......... 24% 19.8M 2s
+  3550K .......... .......... .......... .......... .......... 24% 16.5M 2s
+  3600K .......... .......... .......... .......... .......... 25% 17.3M 2s
+  3650K .......... .......... .......... .......... .......... 25% 17.2M 2s
+  3700K .......... .......... .......... .......... .......... 26% 20.4M 2s
+  3750K .......... .......... .......... .......... .......... 26% 19.2M 2s
+  3800K .......... .......... .......... .......... .......... 26% 13.3M 2s
+  3850K .......... .......... .......... .......... .......... 27% 20.4M 1s
+  3900K .......... .......... .......... .......... .......... 27% 16.4M 1s
+  3950K .......... .......... .......... .......... .......... 27% 24.6M 1s
+  4000K .......... .......... .......... .......... .......... 28% 16.1M 1s
+  4050K .......... .......... .......... .......... .......... 28% 1024K 2s
+  4100K .......... .......... .......... .......... .......... 28% 20.7M 2s
+  4150K .......... .......... .......... .......... .......... 29% 20.8M 1s
+  4200K .......... .......... .......... .......... .......... 29% 25.4M 1s
+  4250K .......... .......... .......... .......... .......... 29% 25.4M 1s
+  4300K .......... .......... .......... .......... .......... 30% 16.6M 1s
+  4350K .......... .......... .......... .......... .......... 30% 25.7M 1s
+  4400K .......... .......... .......... .......... .......... 30% 25.5M 1s
+  4450K .......... .......... .......... .......... .......... 31% 25.1M 1s
+  4500K .......... .......... .......... .......... .......... 31% 20.5M 1s
+  4550K .......... .......... .......... .......... .......... 31% 32.7M 1s
+  4600K .......... .......... .......... .......... .......... 32% 28.8M 1s
+  4650K .......... .......... .......... .......... .......... 32% 25.3M 1s
+  4700K .......... .......... .......... .......... .......... 32% 19.7M 1s
+  4750K .......... .......... .......... .......... .......... 33% 22.3M 1s
+  4800K .......... .......... .......... .......... .......... 33% 38.2M 1s
+  4850K .......... .......... .......... .......... .......... 34% 1.95M 1s
+  4900K .......... .......... .......... .......... .......... 34% 34.9M 1s
+  4950K .......... .......... .......... .......... .......... 34% 25.6M 1s
+  5000K .......... .......... .......... .......... .......... 35% 29.9M 1s
+  5050K .......... .......... .......... .......... .......... 35% 26.8M 1s
+  5100K .......... .......... .......... .......... .......... 35% 34.2M 1s
+  5150K .......... .......... .......... .......... .......... 36% 33.5M 1s
+  5200K .......... .......... .......... .......... .......... 36% 34.2M 1s
+  5250K .......... .......... .......... .......... .......... 36% 24.7M 1s
+  5300K .......... .......... .......... .......... .......... 37% 33.8M 1s
+  5350K .......... .......... .......... .......... .......... 37% 25.3M 1s
+  5400K .......... .......... .......... .......... .......... 37% 33.1M 1s
+  5450K .......... .......... .......... .......... .......... 38% 34.1M 1s
+  5500K .......... .......... .......... .......... .......... 38% 30.1M 1s
+  5550K .......... .......... .......... .......... .......... 38% 36.0M 1s
+  5600K .......... .......... .......... .......... .......... 39% 33.5M 1s
+  5650K .......... .......... .......... .......... .......... 39% 34.4M 1s
+  5700K .......... .......... .......... .......... .......... 39%  735K 1s
+  5750K .......... .......... .......... .......... .......... 40% 25.8M 1s
+  5800K .......... .......... .......... .......... .......... 40% 36.2M 1s
+  5850K .......... .......... .......... .......... .......... 40% 34.7M 1s
+  5900K .......... .......... .......... .......... .......... 41% 26.6M 1s
+  5950K .......... .......... .......... .......... .......... 41% 35.5M 1s
+  6000K .......... .......... .......... .......... .......... 42% 35.1M 1s
+  6050K .......... .......... .......... .......... .......... 42% 35.4M 1s
+  6100K .......... .......... .......... .......... .......... 42% 21.3M 1s
+  6150K .......... .......... .......... .......... .......... 43% 35.5M 1s
+  6200K .......... .......... .......... .......... .......... 43% 35.0M 1s
+  6250K .......... .......... .......... .......... .......... 43% 35.6M 1s
+  6300K .......... .......... .......... .......... .......... 44% 34.8M 1s
+  6350K .......... .......... .......... .......... .......... 44% 35.1M 1s
+  6400K .......... .......... .......... .......... .......... 44% 27.0M 1s
+  6450K .......... .......... .......... .......... .......... 45% 35.6M 1s
+  6500K .......... .......... .......... .......... .......... 45% 1.49M 1s
+  6550K .......... .......... .......... .......... .......... 45% 26.5M 1s
+  6600K .......... .......... .......... .......... .......... 46% 26.8M 1s
+  6650K .......... .......... .......... .......... .......... 46% 26.4M 1s
+  6700K .......... .......... .......... .......... .......... 46% 35.7M 1s
+  6750K .......... .......... .......... .......... .......... 47% 35.5M 1s
+  6800K .......... .......... .......... .......... .......... 47% 35.3M 1s
+  6850K .......... .......... .......... .......... .......... 47% 35.3M 1s
+  6900K .......... .......... .......... .......... .......... 48% 34.2M 1s
+  6950K .......... .......... .......... .......... .......... 48% 27.1M 1s
+  7000K .......... .......... .......... .......... .......... 48% 26.6M 1s
+  7050K .......... .......... .......... .......... .......... 49% 35.8M 1s
+  7100K .......... .......... .......... .......... .......... 49% 34.1M 1s
+  7150K .......... .......... .......... .......... .......... 49% 27.0M 1s
+  7200K .......... .......... .......... .......... .......... 50% 35.2M 1s
+  7250K .......... .......... .......... .......... .......... 50% 35.6M 1s
+  7300K .......... .......... .......... .......... .......... 51%  729K 1s
+  7350K .......... .......... .......... .......... .......... 51% 35.2M 1s
+  7400K .......... .......... .......... .......... .......... 51% 34.3M 1s
+  7450K .......... .......... .......... .......... .......... 52% 34.2M 1s
+  7500K .......... .......... .......... .......... .......... 52% 29.0M 1s
+  7550K .......... .......... .......... .......... .......... 52% 36.4M 1s
+  7600K .......... .......... .......... .......... .......... 53% 34.1M 1s
+  7650K .......... .......... .......... .......... .......... 53% 25.9M 1s
+  7700K .......... .......... .......... .......... .......... 53% 33.2M 1s
+  7750K .......... .......... .......... .......... .......... 54% 30.3M 1s
+  7800K .......... .......... .......... .......... .......... 54% 33.4M 1s
+  7850K .......... .......... .......... .......... .......... 54% 32.4M 1s
+  7900K .......... .......... .......... .......... .......... 55% 33.4M 1s
+  7950K .......... .......... .......... .......... .......... 55% 33.2M 1s
+  8000K .......... .......... .......... .......... .......... 55% 33.9M 1s
+  8050K .......... .......... .......... .......... .......... 56% 25.2M 1s
+  8100K .......... .......... .......... .......... .......... 56% 30.1M 1s
+  8150K .......... .......... .......... .......... .......... 56% 1.42M 1s
+  8200K .......... .......... .......... .......... .......... 57%  126M 1s
+  8250K .......... .......... .......... .......... .......... 57% 47.1M 1s
+  8300K .......... .......... .......... .......... .......... 57% 31.5M 1s
+  8350K .......... .......... .......... .......... .......... 58% 32.7M 1s
+  8400K .......... .......... .......... .......... .......... 58% 25.2M 1s
+  8450K .......... .......... .......... .......... .......... 59% 29.0M 1s
+  8500K .......... .......... .......... .......... .......... 59% 35.0M 1s
+  8550K .......... .......... .......... .......... .......... 59% 31.5M 1s
+  8600K .......... .......... .......... .......... .......... 60% 37.1M 1s
+  8650K .......... .......... .......... .......... .......... 60% 33.7M 1s
+  8700K .......... .......... .......... .......... .......... 60% 33.5M 1s
+  8750K .......... .......... .......... .......... .......... 61% 33.9M 1s
+  8800K .......... .......... .......... .......... .......... 61% 24.6M 1s
+  8850K .......... .......... .......... .......... .......... 61% 33.7M 1s
+  8900K .......... .......... .......... .......... .......... 62% 28.7M 1s
+  8950K .......... .......... .......... .......... .......... 62%  727K 1s
+  9000K .......... .......... .......... .......... .......... 62% 49.3M 1s
+  9050K .......... .......... .......... .......... .......... 63% 32.3M 1s
+  9100K .......... .......... .......... .......... .......... 63% 35.0M 1s
+  9150K .......... .......... .......... .......... .......... 63% 33.8M 1s
+  9200K .......... .......... .......... .......... .......... 64% 33.1M 1s
+  9250K .......... .......... .......... .......... .......... 64% 33.4M 1s
+  9300K .......... .......... .......... .......... .......... 64% 24.8M 1s
+  9350K .......... .......... .......... .......... .......... 65% 30.3M 1s
+  9400K .......... .......... .......... .......... .......... 65% 33.1M 1s
+  9450K .......... .......... .......... .......... .......... 65% 32.8M 1s
+  9500K .......... .......... .......... .......... .......... 66% 37.2M 1s
+  9550K .......... .......... .......... .......... .......... 66% 32.8M 1s
+  9600K .......... .......... .......... .......... .......... 67% 26.3M 1s
+  9650K .......... .......... .......... .......... .......... 67% 51.9M 1s
+  9700K .......... .......... .......... .......... .......... 67% 24.5M 1s
+  9750K .......... .......... .......... .......... .......... 68% 27.2M 1s
+  9800K .......... .......... .......... .......... .......... 68% 1.48M 1s
+  9850K .......... .......... .......... .......... .......... 68% 36.0M 1s
+  9900K .......... .......... .......... .......... .......... 69% 33.1M 0s
+  9950K .......... .......... .......... .......... .......... 69% 25.7M 0s
+ 10000K .......... .......... .......... .......... .......... 69% 30.4M 0s
+ 10050K .......... .......... .......... .......... .......... 70% 34.3M 0s
+ 10100K .......... .......... .......... .......... .......... 70% 34.1M 0s
+ 10150K .......... .......... .......... .......... .......... 70% 34.4M 0s
+ 10200K .......... .......... .......... .......... .......... 71% 33.2M 0s
+ 10250K .......... .......... .......... .......... .......... 71% 33.1M 0s
+ 10300K .......... .......... .......... .......... .......... 71% 31.3M 0s
+ 10350K .......... .......... .......... .......... .......... 72% 23.4M 0s
+ 10400K .......... .......... .......... .......... .......... 72% 37.0M 0s
+ 10450K .......... .......... .......... .......... .......... 72% 32.7M 0s
+ 10500K .......... .......... .......... .......... .......... 73% 34.2M 0s
+ 10550K .......... .......... .......... .......... .......... 73% 31.9M 0s
+ 10600K .......... .......... .......... .......... .......... 73%  733K 0s
+ 10650K .......... .......... .......... .......... .......... 74% 32.7M 0s
+ 10700K .......... .......... .......... .......... .......... 74% 24.1M 0s
+ 10750K .......... .......... .......... .......... .......... 74% 36.3M 0s
+ 10800K .......... .......... .......... .......... .......... 75% 33.9M 0s
+ 10850K .......... .......... .......... .......... .......... 75% 33.6M 0s
+ 10900K .......... .......... .......... .......... .......... 76% 33.7M 0s
+ 10950K .......... .......... .......... .......... .......... 76% 29.3M 0s
+ 11000K .......... .......... .......... .......... .......... 76% 35.2M 0s
+ 11050K .......... .......... .......... .......... .......... 77% 34.6M 0s
+ 11100K .......... .......... .......... .......... .......... 77% 23.1M 0s
+ 11150K .......... .......... .......... .......... .......... 77% 34.5M 0s
+ 11200K .......... .......... .......... .......... .......... 78% 33.9M 0s
+ 11250K .......... .......... .......... .......... .......... 78% 33.9M 0s
+ 11300K .......... .......... .......... .......... .......... 78% 33.4M 0s
+ 11350K .......... .......... .......... .......... .......... 79% 32.4M 0s
+ 11400K .......... .......... .......... .......... .......... 79% 1.46M 0s
+ 11450K .......... .......... .......... .......... .......... 79% 36.4M 0s
+ 11500K .......... .......... .......... .......... .......... 80% 32.6M 0s
+ 11550K .......... .......... .......... .......... .......... 80% 33.1M 0s
+ 11600K .......... .......... .......... .......... .......... 80% 20.5M 0s
+ 11650K .......... .......... .......... .......... .......... 81% 33.6M 0s
+ 11700K .......... .......... .......... .......... .......... 81% 32.4M 0s
+ 11750K .......... .......... .......... .......... .......... 81% 34.6M 0s
+ 11800K .......... .......... .......... .......... .......... 82% 33.2M 0s
+ 11850K .......... .......... .......... .......... .......... 82% 34.0M 0s
+ 11900K .......... .......... .......... .......... .......... 82% 34.5M 0s
+ 11950K .......... .......... .......... .......... .......... 83% 33.1M 0s
+ 12000K .......... .......... .......... .......... .......... 83% 25.4M 0s
+ 12050K .......... .......... .......... .......... .......... 84% 34.9M 0s
+ 12100K .......... .......... .......... .......... .......... 84% 34.1M 0s
+ 12150K .......... .......... .......... .......... .......... 84% 34.4M 0s
+ 12200K .......... .......... .......... .......... .......... 85% 30.4M 0s
+ 12250K .......... .......... .......... .......... .......... 85%  730K 0s
+ 12300K .......... .......... .......... .......... .......... 85% 48.7M 0s
+ 12350K .......... .......... .......... .......... .......... 86% 35.7M 0s
+ 12400K .......... .......... .......... .......... .......... 86% 34.2M 0s
+ 12450K .......... .......... .......... .......... .......... 86% 34.8M 0s
+ 12500K .......... .......... .......... .......... .......... 87% 32.7M 0s
+ 12550K .......... .......... .......... .......... .......... 87% 21.9M 0s
+ 12600K .......... .......... .......... .......... .......... 87% 41.6M 0s
+ 12650K .......... .......... .......... .......... .......... 88% 31.7M 0s
+ 12700K .......... .......... .......... .......... .......... 88% 31.5M 0s
+ 12750K .......... .......... .......... .......... .......... 88% 32.5M 0s
+ 12800K .......... .......... .......... .......... .......... 89% 30.2M 0s
+ 12850K .......... .......... .......... .......... .......... 89% 34.6M 0s
+ 12900K .......... .......... .......... .......... .......... 89% 34.8M 0s
+ 12950K .......... .......... .......... .......... .......... 90% 33.1M 0s
+ 13000K .......... .......... .......... .......... .......... 90% 26.3M 0s
+ 13050K .......... .......... .......... .......... .......... 90% 1.45M 0s
+ 13100K .......... .......... .......... .......... .......... 91% 33.0M 0s
+ 13150K .......... .......... .......... .......... .......... 91% 26.8M 0s
+ 13200K .......... .......... .......... .......... .......... 91% 34.6M 0s
+ 13250K .......... .......... .......... .......... .......... 92% 29.9M 0s
+ 13300K .......... .......... .......... .......... .......... 92% 40.0M 0s
+ 13350K .......... .......... .......... .......... .......... 93% 11.8M 0s
+ 13400K .......... .......... .......... .......... .......... 93% 39.8M 0s
+ 13450K .......... .......... .......... .......... .......... 93%  105M 0s
+ 13500K .......... .......... .......... .......... .......... 94% 61.8M 0s
+ 13550K .......... .......... .......... .......... .......... 94% 38.1M 0s
+ 13600K .......... .......... .......... .......... .......... 94% 34.0M 0s
+ 13650K .......... .......... .......... .......... .......... 95% 34.3M 0s
+ 13700K .......... .......... .......... .......... .......... 95% 32.8M 0s
+ 13750K .......... .......... .......... .......... .......... 95% 34.4M 0s
+ 13800K .......... .......... .......... .......... .......... 96% 26.1M 0s
+ 13850K .......... .......... .......... .......... .......... 96% 35.5M 0s
+ 13900K .......... .......... .......... .......... .......... 96%  717K 0s
+ 13950K .......... .......... .......... .......... .......... 97%  102M 0s
+ 14000K .......... .......... .......... .......... .......... 97% 52.3M 0s
+ 14050K .......... .......... .......... .......... .......... 97% 27.2M 0s
+ 14100K .......... .......... .......... .......... .......... 98% 34.9M 0s
+ 14150K .......... .......... .......... .......... .......... 98% 34.0M 0s
+ 14200K .......... .......... .......... .......... .......... 98% 33.2M 0s
+ 14250K .......... .......... .......... .......... .......... 99% 31.9M 0s
+ 14300K .......... .......... .......... .......... .......... 99% 27.3M 0s
+ 14350K .......... .......... .......... .......... .......... 99% 43.8M 0s
+ 14400K ..                                                    100% 55.8K=1.5s
+
+2025-01-25 22:37:34 (9.29 MB/s) - ‘/Users/handcock/tmp/Rtmpfwstln/file163ae3e2d8374’ saved [14748457/14748457]
+
+> reconstructions_total <- readRDS(tempFile_location)
+> file.remove(tempFile_location)
+[1] TRUE
+> ls()
+[1] "nsidc_data"            "reconstructions_total" "sie.m"                
+[4] "tdate.m"               "tempFile_location"     "year.m"               
+> 
+> #=======================================================================
+> # Gather parameters and vectors for jags run
+> #=======================================================================
+> 
+> set.seed(2)
+> 
+> start <- 958
+> end <- dim(reconstructions_total)[2]
+> end
+[1] 1495
+> 
+> tdate.m <- seq(1899+0.5/12,2025,by=1/12)[1:end]
+> year.m <- trunc(tdate.m)
+> month.m <- rep(1:12,150)[1:end]
+> 
+> year.m[month.m==1] <- year.m[month.m==1] - 1
+> year.m[month.m==2] <- year.m[month.m==2] - 1
+> 
+> year.m[year.m < 1899] <- 1899
+> 
+> skip_run <- FALSE
+> nsim <- 200
+> nsim <- 2
+> rs <- sample(1:2000, size=nsim, replace=FALSE)
+> 
+> for(sim in 1:nsim){
++ sie <- reconstructions_total[rs[sim],,1]
++ tdate <- tdate.m[seq_along(sie)]
++ month <- month.m[seq_along(sie)]
++ year <- year.m[seq_along(sie)]
++ 
++ start_satellite <- 1
++ end_data <- length(sie) # 2023/12 plus 2024/1 to 2024/8
++ 
++ beta_poly_order <- 5
++ beta_poly <- poly(seq(along=tdate[(start_satellite:end_data)]), beta_poly_order)
++ 
++ jags_data = list(
++             "sie" = sie[(start_satellite:end_data)],
++             "tdate" = tdate[(start_satellite:end_data)],
++             "mu_sigma" = c(log(0.5),rep(0, beta_poly_order)),
++             "mu_abeta1" = rep(0, beta_poly_order+1),
++             "tau_sigma" = diag(rep(0.5, beta_poly_order+1)),
++             "tau_abeta1" = diag(rep(0.5, beta_poly_order+1)),
++             "beta_basis" = cbind(rep(1, nrow(beta_poly)), beta_poly)
++                 )
++ #=======================================================================
++ # initialization
++ #=======================================================================
++ initfunction <- function(chain) {
++   return(switch(chain,
++                 "1" = list(
++                   .RNG.name="base::Super-Duper",
++                   .RNG.seed=1),
++                 "2" = list(
++                   .RNG.name="base::Super-Duper",
++                   .RNG.seed=2),
++                 "3" = list(
++                   .RNG.name="base::Super-Duper",
++                   .RNG.seed=3),
++                 ))
++ }
++ 
++ model_file <-
++ "model {
++ 
++   # Priors for population-level effects
++ 
++   int_1 ~ dt(0, 1/(3)^2, 3) 
++   sigma_0 ~ dnorm(0, 1) T(0.00001, )
++   sigmabeta ~ dmnorm(mu_sigma, tau_sigma)
++   abeta1 ~ dmnorm(mu_abeta1, tau_abeta1)
++   mbeta1 ~ dmnorm(0, 0.5)
++   ma1 ~ dunif(-1, 1)
++   ma2 ~ dunif(-1, 1)
++   ar2 ~ dunif(-1, 1)
++   ar3 ~ dunif(-1, 1)
++   ar10 ~ dunif(-1, 1)
++   ar20 ~ dunif(-1, 1)
++ 
++   # Apply autoregression to the residuals
++   mu_[1] = int_1
++   epsilon_[1] = sie[1]-mu_[1]
++   sigma[1] = exp(inprod(sigmabeta, beta_basis[1,])) +sigma_0
++   ar1[1] = inprod(abeta1, beta_basis[1,])
++ #
++   mu_[2] = int_1 + ar1[2] * sie[2 - 1] +
++                    ma1 * epsilon_[2 - 1]
++   epsilon_[2] = sie[2]-mu_[2]
++   sigma[2] = exp(inprod(sigmabeta, beta_basis[2,])) +sigma_0
++   ar1[2] = inprod(abeta1, beta_basis[2,])
++ #
++   for (i_ in 3:12) {
++     mu_[i_] = int_1 + ar1[i_] * sie[i_- 2] +
++                       ma1 * epsilon_[i_- 1]
++     epsilon_[i_] = sie[i_]-mu_[i_]
++     sigma[i_] = exp(inprod(sigmabeta, beta_basis[i_,])) +
++      (tdate[i_] >= 1978.9) * (tdate[i_] < 1987.72) * sigma_0 
++     ar1[i_] = inprod(abeta1, beta_basis[i_,])
++   }
++   for (i_ in 13:length(tdate)) {
++     sigma[i_] = exp(inprod(sigmabeta, beta_basis[i_,])) +
++      (tdate[i_] >= 1978.9) * (tdate[i_] < 1987.72) * sigma_0 
++     ar1[i_] = inprod(abeta1, beta_basis[i_,])
++     mu_[i_] = int_1 + 
++        ar1[i_] * sie[i_ -  1] + 
++        (tdate[i_] >= 1978.9) * (tdate[i_] < 1987.72) * ar10 * sie[i_ -  1] +
++        ar2 * sie[i_ -  4] + 
++        (tdate[i_] >= 1978.9) * (tdate[i_] < 1987.72) * ar20 * sie[i_ -  4] +
++        ar3 * sie[i_ -  12] + 
++        ma1 * epsilon_[i_ - 1] +
++        ma2 * epsilon_[i_ - 12]
++     epsilon_[i_] = sie[i_]-mu_[i_]
++   }
++ 
++   # Model and likelihood
++   for (i_ in 1:length(tdate)) {
++     # Likelihood and log-density for family = gaussian()
++     sie[i_] ~ dnorm(mu_[i_], 1 / sigma[i_]^2)  # SD as precision
++     loglik_[i_] = logdensity.norm(sie[i_], mu_[i_], 1 / sigma[i_]^2)  # SD as precision
++   }
++ }"
++ #=======================================================================
++ # Conditional setup
++ #=======================================================================
++ 
++ nChains <- 3
++ # Next for long run
++ nAdaptSteps <- 50000
++ nBurninSteps <- 100000
++ nThinSteps <- 200
++ nUseSteps <- 150000
++ 
++ # Next for simple run
++ nAdaptSteps <- 500
++ nBurninSteps <- 5000
++ nThinSteps <- 20
++ nUseSteps <- 500
++ 
++ jags_params <- c("abeta1",
++                  "mbeta1",
++                  "sigma",
++                  "ar1",
++                  "ar2",
++                  "ar3",
++                  "ar10",
++                  "ar20",
++                  "sigma_0",
++                  "ma1",
++                  "ma2",
++                  "loglik_"
++                 )
++ if(skip_run){
++   runJagsOut <- readRDS(file=paste0("../Data/Nature-COMMSENV-23-1836A-dynamic-ARIMA.",sim,".rds"))
++ } else {
++   runJagsOut <- run.jags(method = "parallel",
++                      model = model_file,
++                      monitor = jags_params,
++                      data = jags_data,
++                      n.chains = nChains,
++                      adapt = nAdaptSteps,
++                      burnin = nBurninSteps,
++                      sample = ceiling(nUseSteps/nChains),
++                      thin = nThinSteps,
++                      summarise = FALSE,
++                      plots = FALSE,
++                      inits = initfunction)
++   saveRDS(runJagsOut, file=paste0("../Data/Nature-COMMSENV-23-1836A-dynamic-ARIMA.",sim,".rds"))
++ }
++ 
++ #=======================================================================
++ # coda samples - MCMC
++ #=======================================================================
++ coda_samples <- as.mcmc.list(runJagsOut)
++ 
++ #=======================================================================
++ # combine mcmc draws for chains
++ #=======================================================================
++ get.posterior <- function(pars="ar1[", coda_samples, jags_data, chain=1:4) {
++     sin = NULL
++     sel <- grep(pars,dimnames(coda_samples[[chain[1]]])[[2]],fixed=TRUE)
++     for(ch in chain){
++       sin = rbind(sin, coda_samples[[ch]][,sel])
++     }
++     return(sin)
++ }
++ 
++ abeta1 <- get.posterior(pars="abeta1[", coda_samples, jags_data, chain=1:3)
++ 
++ # This code creates some simple plots
++ pdf(paste0("../Figures/Nature-COMMSENV-23-1836A-dynamic-ARIM.pdf",sep=""),paper="USr",width=11,height=9.5)
++ 
++ ar1 <- get.posterior(pars="ar1[", coda_samples, jags_data, chain=1:3)
++ ar10 <- get.posterior(pars="ar10", coda_samples, jags_data, chain=1:3)
++ B=apply(ar1,2,quantile,c(0.05,0.95))
++ dev.off()
++ pdf("../Figures/Nature-COMMSENV-23-1836A-dynamic-ARIMA-details.pdf",paper="USr",width=11,height=9.5)
++ range(jags_data$tdate)
++ plot(x=jags_data$tdate, y=sie,type='l',xlab="Time (years)",ylab="SIE",
++      xlim=c(1900,2025), main="nsidc combined", lwd=3, xaxt="n")
++ plot(x=jags_data$tdate, y=jags_data$sie,type='l',xlab="Time (years)",ylab="SIE",
++      xlim=c(1900,2025), main="sie standardized", lwd=3, xaxt="n")
++ vl <- length(apply(ar1,2,mean))
++ plot(x=jags_data$tdate, y=apply(ar1,2,mean)[ncol(ar1)+1-(vl:1)],type='l',xlab="Time (years)",ylab="AR(1) coefficient",ylim=c(min(B[1,]),max(B[2,])),
++      xlim=c(1900,2025), main="", lwd=3, xaxt="n")
++ lines(x=jags_data$tdate, y=B[1,ncol(ar1)+1-(vl:1)],col=2,lty=2, lwd=3)
++ lines(x=jags_data$tdate, y=B[2,ncol(ar1)+1-(vl:1)],col=2,lty=2, lwd=3)
++ abline(h=1, lty=1, col="gray")
++ axis(1, at=c(seq(1900, 2020, by=5), 2024))
++ abline(h=0, lty=1, col="gray")
++ abline(v=c(1978.9, 1987.9, 2020, 2024.8), lty=1, col="gray")
++ #
++ ar1a <- apply(ar1,2,mean)[ncol(ar1)+1-(vl:1)]
++ ar1a[(tdate >= 1978.9) & (tdate < 1987.72) ] <- ar1a[(tdate >= 1978.9) & (tdate < 1987.72) ] + mean(ar10)
++ plot(x=jags_data$tdate, y=ar1a,type='l',xlab="Time (years)",ylab="AR(1) coefficient",ylim=c(min(B[1,]),max(B[2,])),
++      xlim=c(1900,2025), main="", lwd=3, xaxt="n")
++ lines(x=jags_data$tdate, y=B[1,ncol(ar1)+1-(vl:1)],col=2,lty=2, lwd=3)
++ lines(x=jags_data$tdate, y=B[2,ncol(ar1)+1-(vl:1)],col=2,lty=2, lwd=3)
++ abline(h=1, lty=1, col="gray")
++ axis(1, at=c(seq(1900, 2020, by=5), 2024))
++ abline(h=0, lty=1, col="gray")
++ abline(v=c(1978.9, 1987.9, 2020, 2024.8), lty=1, col="gray")
++ #dev.off()
++ print(mean(ar10))
++ 
++ sigma <- get.posterior(pars="sigma[", coda_samples, jags_data, chain=1:3)
++ B=apply(sigma,2,quantile,c(0.05,0.95))
++ plot(x=jags_data$tdate, y=apply(sigma,2,mean),type='l',xlab="date",ylab="sigma",
++      main="Standard deviation",  xlim=c(1978,2025))
++ lines(x=jags_data$tdate, y=B[1,],col=3,lty=2)
++ lines(x=jags_data$tdate, y=B[2,],col=3,lty=2)
++ 
++ #=======================================================================
++ # Plots
++ #=======================================================================
++ 
++ plot.trace.param.vec <- function(coda_samples, params, labels) {
++     npar <- length(params)
++     max_par <- 6
++     if(npar > max_par){
++         if((npar %% max_par) == 1) {
++             max_par <- max_par - 1
++         }
++         par_chunks <- split(params, ceiling(seq_along(params)/max_par))
++         lab_chunks <- split(labels, ceiling(seq_along(labels)/max_par))
++         for(i in 1:length(par_chunks)){
++             plot.trace.param.vec(coda_samples, par_chunks[[i]], lab_chunks[[i]])
++         }
++         return(NA)
++     }
++     posterior <- as.matrix(coda_samples[,params])
++     plots <- list(NA)
++     cur_plot=1
++     for(i in 1:npar){
++         pars <- c(params[i], params[i])
++         plots[[cur_plot]] <- mcmc_trace(posterior[, c(i, i)], pars=pars)
++             labs(y=labels[i])
++         cur_plot<-cur_plot+1
++         plots[[cur_plot]] <- mcmc_areas(posterior[, c(i,i)],
++                                         pars=pars,
++                                         prob = 0.8) +
++             labs(y=labels[i]) + yaxis_text(on=FALSE)
++         cur_plot<-cur_plot+1
++     }
++     if(npar < 6) {
++         for(i in (npar+1):6) {
++             for(j in 1:2){
++                 plots[[cur_plot]] <- grid.rect(gp=gpar(col="white"))
++                 cur_plot<-cur_plot+1
++             }
++         }
++     }
++     do.call("grid.arrange", c(plots, ncol=2))
++ }
++ 
++ plot.intervals.param.vec <- function(coda_samples, params) {
++     posterior <- as.matrix(coda_samples[,params]) 
++     mcmc_intervals(posterior)
++ }
++ 
++ plot.cin.errbar <- function(coda_samples, jags_data, chain=1, minmax=FALSE) {
++     c_post <- get.cin.posterior(coda_samples, jags_data, chain)
++     if(minmax) {
++         probs <- c(0, .5, 1)
++         title <- "Median with Min and Max values"
++         df_q <- as.data.frame(colQuantiles(c_post, probs=probs)) %>%
++             setNames(c("Lower", "Median", "Upper"))
++     } else {
++         sds <- colSds(c_post)
++         meds <- colQuantiles(c_post, probs=c(0.5))
++         df_q <- as.data.frame(cbind(meds-1.96*sds, meds, meds+1.96*sds)) %>%
++             setNames(c("Lower", "Median", "Upper"))
++         probs <- c(.05, .5, .95)
++         title <- "Median +/- 1.96*std deviation"
++     }
++     ggplot(df_q, aes(x=row.names(df_q), y=Median)) +
++         geom_point(size=2) +
++         geom_errorbar(aes(ymin=Lower, ymax=Upper)) +
++         scale_x_discrete(limits=c(1:dim(df_q)[1])) + 
++         labs(x="Lag (Days)", y="Coefficient",
++              title=title)
++ }
++  
++ #-----------------------------------------------------------------------
++ ## MCMC diagnostics
++ #-----------------------------------------------------------------------
++ 
++ pdf("../Figures/Nature-COMMSENV-23-1836A-dynamic-ARIMA-mcmc_plots.pdf")
++ 
++ # Plot beta posterior
++ params <- c(sprintf("abeta1[%d]", c(1:beta_poly_order)), sprintf("mbeta1[%d]", c(1:1)), "sigma[527]")
++ params <- c(sprintf("abeta1[%d]", c(1:beta_poly_order)), "mbeta1", "sigma[527]", "ar2", "ar3", "ar10", "ar20", "ma1", "ma2","sigma_0")
++ labels <- params
++ plot.intervals.param.vec(coda_samples, params)
++ plot.trace.param.vec(coda_samples, params, labels)
++ 
++ dev.off()
++ 
++ pdf("../Figures/Nature-COMMSENV-23-1836A-dynamic-ARIMA-loo.pdf")
++ # Model comparison
++ ll <- get.posterior(pars="loglik_", coda_samples, jags_data, chain=1:3)
++ gc <- rep(1:3,sapply(coda_samples, nrow))
++ r_eff <- loo::relative_eff(x = exp(ll), chain_id=gc)
++ loo.m <- loo::loo(ll, r_eff = r_eff, save_psis = FALSE)         
++ plot(loo.m)
++ loo.m
++ saveRDS(loo.m, file=paste0("../Data/Nature-COMMSENV-23-1836A-dynamic-ARIMA-loo_",sim,".rds"))
++ } # end of foreach loop
+Calling 3 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 (official binary) on Sat Jan 25 22:37:34 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 1495
+   Unobserved stochastic nodes: 11
+   Total graph size: 40411
+. Reading parameter file inits1.txt
+. Initializing model
+. Adapting 500
+-------------------------------------------------| 500
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 5000
+-------------------------------------------------| 5000
+************************************************** 100%
+. . . . . . . . . . . . . Updating 3340
+-------------------------------------------------| 3300
+************************************************** 99%
+* 100%
+. . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+[1] 0.08850326
+Calling 3 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 (official binary) on Sat Jan 25 22:39:44 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 1495
+   Unobserved stochastic nodes: 11
+   Total graph size: 40411
+. Reading parameter file inits1.txt
+. Initializing model
+. Adapting 500
+-------------------------------------------------| 500
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 5000
+-------------------------------------------------| 5000
+************************************************** 100%
+. . . . . . . . . . . . . Updating 3340
+-------------------------------------------------| 3300
+************************************************** 99%
+* 100%
+. . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+[1] 0.04252747
+Warning message:
+The adaptation phase of one or more models was not completed in 500 iterations, so the current samples may not be optimal - try increasing the number of iterations to the "adapt" argument 
+> 
+> proc.time()
+   user  system elapsed 
+ 14.046   1.499 258.663 
