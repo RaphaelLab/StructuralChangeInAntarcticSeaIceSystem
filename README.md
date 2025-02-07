@@ -7,6 +7,8 @@ This repository contains the `R` source code and data to reproduce analyses in t
 
 by Marilyn N. Raphael, Thomas J. Maierhofer, Ryan L. Fogt, William R. Hobbs, and Mark S. Handcock. It will appear in *Nature-Communications Earth & Environment* in 2025.
 
+This repository is live and will be maintained to ensure the code runs correctly. A static version of this code that coincides with the publication of the paper is available at [a zenodo repository](https://doi.org/10.5281/zenodo.14741173).
+
 # System Requirements
 The code is all in the `R` language for statistical computation. It will run on any system that supports `R` (e.g., Windows, Macintosh, Linux).
 Version 4.0 or higher of `R` is required to be installed on your
@@ -44,5 +46,6 @@ See the following papers for more information and examples:
 * Maierhofer, Thomas J, Raphael, Marilyn N., Fogt, Ryan L., and Handcock, Mark S. (2024). [A Bayesian model for 20th century Antarctic sea ice extent reconstruction](https://doi.org/10.1029/2024EA003577). Earth and Space Science, 11, e2024EA003577. https://doi.org/10.1029/2024EA003577.
 * Maierhofer, Thomas J (2023) [Statistical Reconstruction of 20th Century Antarctic Sea Ice](https://escholarship.org/uc/item/33m3c3mn)
   Dissertation, University of California at Los Angeles. ProQuest ID: Maierhofer_ucla_0031D_21798. Merritt ID: ark:/13030/m5z68gkk.
+* Raphael, Marilyn N., Maierhofer, Thomas J, Fogt, Ryan L., Hobbs, William R. and Handcock, Mark S. (2024). [A Twenty-First Century Structural Change in Antarctica's Sea Ice System: Data and Code Repository]([https://doi.org/10.1029/2024EA003577](https://doi.org/10.5281/zenodo.14741173). Zenodo, version 1.0 [https://doi.org/10.1029/2024EA003577](https://doi.org/10.5281/zenodo.14741173).
 * R Core Team (2021). [R: A language and environment for statistical computing](https://www.R-project.org/). R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
 * R Core Team (2021). [The Comprehensive R Archive Network (CRAN)](https://www.R-project.org/). R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
