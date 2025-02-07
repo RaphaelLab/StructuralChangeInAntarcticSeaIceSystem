@@ -277,7 +277,7 @@ axis(1)
 axis(4)
 dev.off()
 
-pdf(file = "../Figures/Nature-COMMSENV-23-1836A-PSIS.pdf", width = 8, height = 8)
+pdf(file = "../Figures/Nature-COMMSENV-s43247-023-01836-A-PSIS.pdf", width = 8, height = 8)
 
 # These are the components of Supplementary Figure 2
 # King Haakon
