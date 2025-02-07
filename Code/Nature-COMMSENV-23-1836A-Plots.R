@@ -202,6 +202,7 @@ breaklabel <- function(x){
    labels[1:x]
 }
 cols=c("purple","darkblue","blue","dodgerblue3","dodgerblue","deepskyblue2","deepskyblue","skyblue","lightskyblue2","lightskyblue3","lightgoldenrod1","khaki1","yellow","goldenrod1","orange","darkorange","firebrick2","red","red2","brown2","indianred","red3")
+cols <- rev(cols)
 mybreaks <- c(seq(-0.85, 0, length.out = 10), seq(0, 0.6, length=12))
 mycolors<- function(x) { cols }
 base_size <- 5.5
@@ -575,7 +576,7 @@ avg_prediction_e$Season = c(1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 1, 1)
 avg_prediction_e$Year = rep(1899:2023, each = 12)
 avg_prediction_e$Decade = as.character(rep(seq(1900, 2023, by = 10), each = 12*10))[1:1500]
 
-pdf(file = "../Figures/Fig2color-abs_R2.pdf", width = 8, height = 8)
+pdf(file = "../Figures/Figure2-no-legend.pdf", width = 8, height = 8)
 library(mgcv)
 fit_total <- gam(Total ~ s(Month, Year), data=avg_prediction_e, method="ML")
 summary(fit_total)
@@ -620,6 +621,7 @@ breaklabel <- function(x){
    labels[1:x]
 }
 cols=c("purple","darkblue","blue","dodgerblue3","dodgerblue","deepskyblue2","deepskyblue","skyblue","lightskyblue2","lightskyblue3","lightgoldenrod1","khaki1","yellow","goldenrod1","orange","darkorange","firebrick2","red","red2","brown2","indianred","red3")
+cols <- rev(cols)
 mybreaks <- seq(-0.3, 0.6, length.out = length(cols))
 mybreaks <- c(seq(-0.3, 0, length.out = 10), seq(0, 0.6, length=12))
 mybreaks <- c(seq(-0.5, 0, length.out = 10), seq(0, 0.6, length=12))
