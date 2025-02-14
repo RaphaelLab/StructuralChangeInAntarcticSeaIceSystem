@@ -181,7 +181,7 @@ jags_params <- c("abeta1",
                  "loglik_"
                 )
 if(skip_run){
-  runJagsOut <- readRDS(file=paste0("../Data/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA.",sim,".rds"))
+  runJagsOut <- readRDS(file=paste0("../Data/Nature-s43247-025-02107-5-dynamic-ARIMA.",sim,".rds"))
 } else {
   runJagsOut <- run.jags(method = "parallel",
                      model = model_file,
@@ -195,7 +195,7 @@ if(skip_run){
                      summarise = FALSE,
                      plots = FALSE,
                      inits = initfunction)
-  saveRDS(runJagsOut, file=paste0("../Data/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA.",sim,".rds"))
+  saveRDS(runJagsOut, file=paste0("../Data/Nature-s43247-025-02107-5-dynamic-ARIMA.",sim,".rds"))
 }
 
 #=======================================================================
@@ -218,13 +218,13 @@ get.posterior <- function(pars="ar1[", coda_samples, jags_data, chain=1:4) {
 abeta1 <- get.posterior(pars="abeta1[", coda_samples, jags_data, chain=1:3)
 
 # This code creates some simple plots
-pdf(paste0("../Figures/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIM.pdf",sep=""),paper="USr",width=11,height=9.5)
+pdf(paste0("../Figures/Nature-s43247-025-02107-5-dynamic-ARIM.pdf",sep=""),paper="USr",width=11,height=9.5)
 
 ar1 <- get.posterior(pars="ar1[", coda_samples, jags_data, chain=1:3)
 ar10 <- get.posterior(pars="ar10", coda_samples, jags_data, chain=1:3)
 B=apply(ar1,2,quantile,c(0.05,0.95))
 dev.off()
-pdf("../Figures/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA-details.pdf",paper="USr",width=11,height=9.5)
+pdf("../Figures/Nature-s43247-025-02107-5-dynamic-ARIMA-details.pdf",paper="USr",width=11,height=9.5)
 range(jags_data$tdate)
 plot(x=jags_data$tdate, y=sie,type='l',xlab="Time (years)",ylab="SIE",
      xlim=c(1900,2025), main="nsidc combined", lwd=3, xaxt="n")
@@ -335,7 +335,7 @@ plot.cin.errbar <- function(coda_samples, jags_data, chain=1, minmax=FALSE) {
 ## MCMC diagnostics
 #-----------------------------------------------------------------------
 
-pdf("../Figures/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA-mcmc_plots.pdf")
+pdf("../Figures/Nature-s43247-025-02107-5-dynamic-ARIMA-mcmc_plots.pdf")
 
 # Plot beta posterior
 params <- c(sprintf("abeta1[%d]", c(1:beta_poly_order)), sprintf("mbeta1[%d]", c(1:1)), "sigma[527]")
@@ -346,7 +346,7 @@ plot.trace.param.vec(coda_samples, params, labels)
 
 dev.off()
 
-pdf("../Figures/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA-loo.pdf")
+pdf("../Figures/Nature-s43247-025-02107-5-dynamic-ARIMA-loo.pdf")
 # Model comparison
 ll <- get.posterior(pars="loglik_", coda_samples, jags_data, chain=1:3)
 gc <- rep(1:3,sapply(coda_samples, nrow))
@@ -354,5 +354,5 @@ r_eff <- loo::relative_eff(x = exp(ll), chain_id=gc)
 loo.m <- loo::loo(ll, r_eff = r_eff, save_psis = FALSE)         
 plot(loo.m)
 loo.m
-saveRDS(loo.m, file=paste0("../Data/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA-loo_",sim,".rds"))
+saveRDS(loo.m, file=paste0("../Data/Nature-s43247-025-02107-5-dynamic-ARIMA-loo_",sim,".rds"))
 } # end of foreach loop

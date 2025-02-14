@@ -82,12 +82,12 @@ Loading required package: rngtools
 > future::plan(multicore, workers=30)
 > doRNG::registerDoRNG(1)
 > 
-> #source("Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA-plot-roots.R")
+> #source("Nature-s43247-025-02107-5-dynamic-ARIMA-plot-roots.R")
 > persistence <- matrix(0, nrow=nsim, ncol=1495)
 > companion <- matrix(0,ncol=12,nrow=12)
 > for(k in 1:11){companion[k+1,k] <- 1}
 > persistence <- foreach::foreach(sim = 1:nsim, .packages = c("runjags"), .export=c("rs"), .combine = 'rbind') %dopar% {
-+   runJagsOut <- readRDS(file=paste0("../Data/Nature-COMMSENV-s43247-023-01836-A-dynamic-ARIMA.",sim,".rds"))
++   runJagsOut <- readRDS(file=paste0("../Data/Nature-s43247-025-02107-5-dynamic-ARIMA.",sim,".rds"))
 +   coda_samples <- as.mcmc.list(runJagsOut$mcmc)
 + 
 +   ar1 <- get.posterior(pars="ar1[", coda_samples, chain=1:3)
