@@ -1,4 +1,4 @@
-<img src="Figures/Figure2.png" align="left" width="150" height="230" alt="A21CSCASIS"/>
+<img src="Figures/Figure2.png" align="left" width="150" height="230" alt="StructuralChangeInAntarcticSeaIceSystem"/>
 
 # Overview 
 This repository contains the `R` source code and data to reproduce analyses in the paper:
