@@ -6,7 +6,7 @@ This repository contains the `R` source code and data to reproduce analyses in t
 "[A Twenty-First Century Structural Change in Antarctica’s Sea ice
 System](https://doi.org/10.1038/s43247-025-02107-5)"
 
-by Marilyn N. Raphael, Thomas J. Maierhofer, Ryan L. Fogt, William R. Hobbs, and Mark S. Handcock. It appears in *Nature-Communications Earth & Environment*, 2025.
+by Marilyn N. Raphael, Thomas J. Maierhofer, Ryan L. Fogt, William R. Hobbs, and Mark S. Handcock. It appears in *Nature-Communications Earth & Environment*, 6, 131, 2025.
 
 This repository is live and will be maintained to ensure the code runs correctly. A static version of this code that coincides with the publication of the paper is available at [a zenodo repository](https://doi.org/10.5281/zenodo.14741173).
 
